@@ -9,6 +9,8 @@
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+<!-- Google reCAPTCHA v2 (explicit render, since forms are injected dynamically) -->
+<script src="https://www.google.com/recaptcha/api.js?render=explicit" async defer></script>
 
 <style>
 :root{
@@ -1929,6 +1931,8 @@ const dot=on=>on?`<span style="position:absolute;bottom:-1px;right:-1px;width:9p
    ============================================================ */
 const Auth={
   screen:'signin', regRole:null, err:{},
+  RECAPTCHA_SITE_KEY: '6LcwppItAAAAABdxYVDqJAmtmWR1cyUae7ov45gE',
+  captchaIds:{},
 
   render(){
     const lm = document.getElementById('logoMark');
@@ -1940,9 +1944,30 @@ const Auth={
                     : Auth.screen==='lead'   ? Auth.leadHTML()
                     : Auth.facultyHTML();
       const f = box.querySelector('input'); if(f) setTimeout(() => f.focus(), 60);
+      const captchaEl = box.querySelector('.g-recaptcha-slot');
+      if (captchaEl) Auth.renderCaptcha(captchaEl.id);
     }
     const cl = document.getElementById('credList');
     if (cl) cl.innerHTML = Auth.credsHTML();
+  },
+
+  // reCAPTCHA widgets live inside HTML strings that get re-injected via innerHTML,
+  // so the normal auto-render (data-sitekey div) never fires — render explicitly instead.
+  renderCaptcha(id){
+    if (typeof grecaptcha === 'undefined' || !grecaptcha.render) { setTimeout(() => Auth.renderCaptcha(id), 250); return; }
+    const el = document.getElementById(id);
+    if (!el || el.childElementCount) return;
+    try { Auth.captchaIds[id] = grecaptcha.render(id, { sitekey: Auth.RECAPTCHA_SITE_KEY }); }
+    catch (e) { console.warn('reCAPTCHA render failed:', e); }
+  },
+  // If the reCAPTCHA script hasn't loaded (offline demo, blocked network) don't lock
+  // the user out of the app — fail open, same as the rest of this client-only auth flow.
+  verifyCaptcha(id){
+    if (typeof grecaptcha === 'undefined' || Auth.captchaIds[id] === undefined) return true;
+    return !!grecaptcha.getResponse(Auth.captchaIds[id]);
+  },
+  resetCaptcha(id){
+    if (typeof grecaptcha !== 'undefined' && Auth.captchaIds[id] !== undefined) grecaptcha.reset(Auth.captchaIds[id]);
   },
 
   head(){ return `<div class="logo"><div class="m">${I.orbit(15)}</div><span style="font-weight:800;letter-spacing:-0.02em;color:var(--ink);">Pro Track</span></div>`; },
@@ -1959,6 +1984,7 @@ const Auth={
           <input class="inp" id="si_pass" type="password" placeholder="••••••••" autocomplete="current-password"
             onkeydown="if(event.key==='Enter')Auth.signin()"/></div>
         <div id="si_err"></div>
+        <div id="captcha_si" class="g-recaptcha-slot" style="margin:10px 0;"></div>
         <button class="btn pri blk" style="height:40px; font-weight:700; margin-top:6px;" onclick="Auth.signin()">Sign in</button>
       </div>
 
@@ -2481,6 +2507,7 @@ const Auth={
           <div class="field"><label for="r_group">Group name</label><input class="inp" id="r_group" placeholder="e.g. Group 04"/></div>
         </div>
         <div id="r_err"></div>
+        <div id="captcha_lead" class="g-recaptcha-slot" style="margin:10px 0;"></div>
         <button class="btn pri blk" style="height:36px" onclick="Auth.registerLead()">Create team and continue</button>
       </div>
       <div class="switcher"><button onclick="Auth.go('choose')">Back</button></div>`;
@@ -2521,6 +2548,7 @@ const Auth={
           <div class="field"><label for="f_pass2">Confirm</label><input class="inp" id="f_pass2" type="password" placeholder="Repeat password"/></div>
         </div>
         <div id="f_err"></div>
+        <div id="captcha_faculty" class="g-recaptcha-slot" style="margin:10px 0;"></div>
         <button class="btn pri blk" style="height:36px" onclick="Auth.registerFaculty()">Create account</button>
       </div>
       <div class="switcher"><button onclick="Auth.go('choose')">Back</button></div>`;
@@ -2567,6 +2595,7 @@ const Auth={
     const pw=document.getElementById('si_pass').value;
     if(!em) return Auth.showErr('si_err','Please enter your email address.');
     if(!pw) return Auth.showErr('si_err','Please enter your password.');
+    if(!Auth.verifyCaptcha('captcha_si')) return Auth.showErr('si_err','Please complete the reCAPTCHA.');
 
     let u=userByEmail(em);
     if (!u) {
@@ -2589,6 +2618,7 @@ const Auth={
       API.push();
     } else {
       if (u.pass && hash(pw) !== u.pass) {
+        Auth.resetCaptcha('captcha_si');
         return Auth.showErr('si_err', 'Incorrect password.');
       }
     }
@@ -2605,6 +2635,7 @@ const Auth={
     if(pw.length<6) return Auth.showErr('r_err','Password must be at least 6 characters.');
     if(pw!==pw2) return Auth.showErr('r_err','The two passwords do not match.');
     if(!gname) return Auth.showErr('r_err','Give your group a name.');
+    if(!Auth.verifyCaptcha('captcha_lead')) return Auth.showErr('r_err','Please complete the reCAPTCHA.');
 
     const proj = "Course Project";
     const gid='g-'+uid(), uidv='u-'+uid();
@@ -2634,6 +2665,7 @@ const Auth={
 
     const chks = document.querySelectorAll('.f-subj-chk:checked');
     if (!chks.length) return Auth.showErr('f_err','Please select at least one teaching subject.');
+    if(!Auth.verifyCaptcha('captcha_faculty')) return Auth.showErr('f_err','Please complete the reCAPTCHA.');
 
     const subjects = [];
     let primarySem = 3;
