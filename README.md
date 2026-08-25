@@ -9,8 +9,6 @@
 ![Express](https://img.shields.io/badge/Express-000000?logo=express&logoColor=white)
 ![Runs anywhere](https://img.shields.io/badge/Runs%20on-Windows%20%C2%B7%20Mac%20%C2%B7%20Linux-555)
 
-> **🔗 Live app:** https://protrack-app-protrack.github.io/ProTrack/ &nbsp;·&nbsp; sign in with `aarav@college.edu` / `student123`
-
 An AI-assisted project-management app for college project teams and faculty, built
 around **Amrita Vishwa Vidyapeetham, Faridabad — B.Tech Artificial Intelligence &
 Data Science, Semester 3**.
