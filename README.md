@@ -1,6 +1,5 @@
 # 🛰️ Pro Track — College Project Tracker
 
-[![Live Demo](https://img.shields.io/badge/%F0%9F%9A%80_Live_Demo-Open_App-4C5FD5?style=for-the-badge)](https://protrack-app-protrack.github.io/ProTrack/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-1E8A5C.svg?style=for-the-badge)](LICENSE)
 
 ![HTML5](https://img.shields.io/badge/HTML5-E34F26?logo=html5&logoColor=white)
