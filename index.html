@@ -2792,6 +2792,7 @@ const App={
       ['deliverables','Deliverables',I.folder,delivCount||null],
       ['calendar','Calendar',I.cal],
       ['board','Task Board',I.board],
+      ['timeline','Timeline',I.trend],
       ['mytasks','My Tasks',I.list,my],
       ['team','My Team',I.users,membersOf(App.me.groupId).length],
       ['requests','Supervision Requests',I.mail,pendingReqs||null],
@@ -2845,6 +2846,7 @@ const App={
         App.tab==='activity'  ? Page.activity(null) :
         App.tab==='group'     ? Page.groupDetail(App.openGroup) :
         App.tab==='board'     ? Page.board() :
+        App.tab==='timeline'  ? Page.timeline() :
         App.tab==='mytasks'   ? Page.mytasks() :
         App.tab==='team'      ? Page.team() :
         App.tab==='requests'   ? Page.requestsPage() :
